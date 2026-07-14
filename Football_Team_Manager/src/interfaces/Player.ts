@@ -1,9 +1,10 @@
 export interface Player {
-    id: string;
+    playerId: string;
+    _id?: string;
     firstName: string;
     lastName: string;
-    Nationality: string;
-    Number: number;
-    Cost: number;
-    Team: string;
+    nationality: string;
+    number: number;
+    cost: number;
+    teamId?: string;
 }

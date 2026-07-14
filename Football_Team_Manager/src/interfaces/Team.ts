@@ -1,6 +1,6 @@
 export interface Team {
-    id: string;
+    _id?: string;
     name: string;
-    Budget: number;
-    players: string[];
+    budget: number;
+    playerIds: string[];
 }
