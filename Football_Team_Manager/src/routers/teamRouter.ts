@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { TeamController } from "../controller/tean.controller.js";
+import { TeamController } from "../controllers/team.controller.js";
 
 class TeamRouter {
     public router: Router;

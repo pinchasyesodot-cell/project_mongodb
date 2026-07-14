@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PlayerController } from "../controller/player.controller.js";
+import { PlayerController } from "../controllers/player.controller.js";
 
 class PlayerRouter {
     public router: Router;
