@@ -2,7 +2,7 @@ import { connect } from "mongoose";
 import { MONGO_URI } from "./env.js";
 
 class Database {
-    public async connect(): Promise<void> {
+    public connect = async (): Promise<void> => {
         try {
             await connect(MONGO_URI, {
                 serverSelectionTimeoutMS: 5000,
