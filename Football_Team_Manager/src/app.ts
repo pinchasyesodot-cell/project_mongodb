@@ -15,6 +15,7 @@ class Server {
     private initMiddlewares(): void {
         this.app.use(express.json());
         this.app.use("/api/players", playerRouter);
+        this.app.use("/api/teams", teamRouter);
     }
 
     public async start(): Promise<void> {
