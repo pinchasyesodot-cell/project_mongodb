@@ -18,7 +18,7 @@ class Server {
         this.app.use("/api/teams", teamRouter);
     }
 
-    public async start(): Promise<void> {
+    public start = async (): Promise<void> => {
         try {
             await database.connect();
             this.app.listen(this.port, "0.0.0.0", () => {
@@ -28,7 +28,7 @@ class Server {
             console.error("Failed to start the server:", error);
             process.exit(1);
         }
-    }
+    };
 }
 const server = new Server();
 server.start();
