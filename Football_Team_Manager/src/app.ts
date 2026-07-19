@@ -1,7 +1,8 @@
 import express, { type Application } from "express";
-import { PORT } from "./config/env.js";
 import database from "./config/db.js";
-import  playerRouter  from "./routers/playerRouter.js";
+import { PORT } from "./config/env.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
+import playerRouter from "./routers/playerRouter.js";
 import teamRouter from "./routers/teamRouter.js";
 
 class Server {
@@ -16,6 +17,7 @@ class Server {
         this.app.use(express.json());
         this.app.use("/api/players", playerRouter);
         this.app.use("/api/teams", teamRouter);
+        this.app.use(errorHandler);
     }
 
     public start = async (): Promise<void> => {
