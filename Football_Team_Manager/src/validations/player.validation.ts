@@ -29,6 +29,13 @@ export const createPlayerSchema = z.object({
         .regex(/^[0-9a-fA-F]{24}$/, "Team ID must be a valid MongoDB ObjectId")
         .trim()
         .optional(),
+    goalsScored: z.coerce.number("Goals Scored must be a number").min(0).default(0).optional(),
+    matchesPlayed: z.coerce.number("Matches Played must be a number").min(0).default(0).optional(),
+    averageRating: z.coerce
+        .number("Average rating must be a number")
+        .min(0, "Average rating cannot be less than 0")
+        .max(10, "Average rating cannot be more than 10")
+        .optional(),
 });
 
 export const playerIdParamSchema = z.object({

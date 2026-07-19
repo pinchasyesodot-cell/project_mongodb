@@ -3,4 +3,5 @@ export interface Team {
     name: string;
     budget: number;
     playerIds: string[];
+    country: string;
 }

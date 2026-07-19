@@ -7,6 +7,9 @@ export interface Player {
     number: number;
     cost: number;
     teamId?: string;
+    averageRating: number;
+    goalsScored: number;
+    matchesPlayed: number;
 }
 
 export interface SpainPlayer {

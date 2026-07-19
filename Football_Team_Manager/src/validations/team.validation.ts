@@ -10,6 +10,11 @@ export const createTeamSchema = z.object({
     playerIds: z.array(
         z.string("Player ID must be a string").length(9, "Player ID must be exactly 9 characters long").trim()
     ),
+    country: z
+        .string("country must be a string")
+        .min(4, "country must be at least 4 characters long")
+        .max(20, "country must be at most 20 characters long")
+        .trim(),
 });
 
 export const teamIdParamSchema = z.object({
