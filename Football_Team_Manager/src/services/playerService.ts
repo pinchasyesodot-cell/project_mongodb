@@ -1,4 +1,4 @@
-import type { Player } from "../interfaces/Player.js";
+import type { Player, SpainPlayer } from "../interfaces/Player.js";
 import { PlayerModel } from "../models/Player.js";
 import { TeamModel } from "../models/Team.js";
 import { AppError, NotFound } from "../utils/AppError.js";
@@ -56,6 +56,56 @@ export class PlayerService {
                 throw error;
             }
             throw new AppError(`Error fetching player by number: ${(error as Error).message}`, 500);
+        }
+    };
+    static getAllSpainPlayers = async (): Promise<SpainPlayer[]> => {
+        try {
+            const players: SpainPlayer[] = await PlayerModel.aggregate([
+                { $match: { nationality: "Spain" } },
+                {
+                    $lookup: {
+                        from: "teams",
+                        localField: "teamId",
+                        foreignField: "_id",
+                        as: "teamData",
+                    },
+                },
+                { $unwind: "$teamData" },
+                {
+                    $project: {
+                        _id: 0,
+                        fullName: { $concat: ["$firstName", " ", "$lastName"] },
+                        teamName: "$teamData.name",
+                    },
+                },
+            ]);
+            if (players.length === 0) {
+                throw new NotFound("players Spain not found");
+            }
+            return players;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Error get players Spain: ${(error as Error).message}`, 500);
+        }
+    };
+    static getTop3MostExpensive = async (): Promise<Player[]> => {
+        try {
+            const players: Player[] = await PlayerModel.aggregate([
+                { $match: { nationality: { $ne: "Spain" } } },
+                { $sort: { cost: -1 } },
+                { $limit: 3 },
+            ]);
+            if (players.length === 0) {
+                throw new NotFound("3 players not found");
+            }
+            return players;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Error get top 3 expensive players: ${(error as Error).message}`, 500);
         }
     };
     static transferPlayer = async (playerId: string, newTeamId: string): Promise<Player> => {
