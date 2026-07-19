@@ -32,6 +32,8 @@ class PlayerRouter {
             validateRequest(teamAndPlayerNumberSchema, "params"),
             PlayerController.getPlayerByNumber
         );
+        this.router.get("/spain", PlayerController.getAllPlayersSpain);
+        this.router.get("/top-expensive", PlayerController.getTop3ExpensivePlayers);
         this.router.put(
             "/:playerId/transfer",
             validateRequest(playerIdParamSchema, "params"),

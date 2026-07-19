@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { PlayerService } from "../services/playerService.js";
 import type { CreatePlayerDTO } from "../validations/player.validation.js";
+import { platform } from "os";
 
 export class PlayerController {
     static createPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -38,6 +39,22 @@ export class PlayerController {
                 throw new Error("Invalid player number");
             }
             const players = await PlayerService.getPlayerByNumber(teamId, playerNumber);
+            res.status(200).json(players);
+        } catch (error) {
+            next(error);
+        }
+    };
+    static getAllPlayersSpain = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const players = await PlayerService.getAllSpainPlayers();
+            res.status(200).json(players);
+        } catch (error) {
+            next(error);
+        }
+    };
+    static getTop3ExpensivePlayers = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const players = await PlayerService.getTop3MostExpensive();
             res.status(200).json(players);
         } catch (error) {
             next(error);
