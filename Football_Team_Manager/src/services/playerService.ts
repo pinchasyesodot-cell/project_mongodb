@@ -1,9 +1,11 @@
 import type { Player } from "../interfaces/Player.js";
 import { PlayerModel } from "../models/Player.js";
 import { TeamModel } from "../models/Team.js";
+import { AppError, NotFound } from "../utils/AppError.js";
+import type { CreatePlayerDTO } from "../validations/player.validation.js";
 
 export class PlayerService {
-    static createPlayer = async (playerData: Player): Promise<Player> => {
+    static createPlayer = async (playerData: CreatePlayerDTO): Promise<Player> => {
         try {
             const newPlayer = new PlayerModel(playerData);
             await newPlayer.save();
@@ -14,54 +16,54 @@ export class PlayerService {
     };
     static getPlayerByTeam = async (teamId: string): Promise<Player[]> => {
         try {
-            const players = await PlayerModel.find({ teamId: teamId });
+            const players = await PlayerModel.find({ teamId });
             return players.map((player) => player.toJSON() as Player);
         } catch (error) {
-            throw new Error(`Error fetching players by team: ${(error as Error).message}`);
+            throw new Error(`Error fetching players by team:${(error as Error).message}`);
         }
     };
-     static getPlayersByName = async ( playerName: string): Promise<Player[]> => {
-            try {
-                const regex = new RegExp(playerName, "i");
-                const players = await PlayerModel.find({ $or: [{ firstName: regex }, { lastName: regex }] });
-                return players.map((player) => player.toJSON() as Player);
-            } catch (error) {
-                throw new Error(`Error fetching players: ${(error as Error).message}`);
-            }
-        };
+    static getPlayersByName = async (playerName: string): Promise<Player[]> => {
+        try {
+            const regex = new RegExp(playerName, "i");
+            const players = await PlayerModel.find({ $or: [{ firstName: regex }, { lastName: regex }] });
+            return players.map((player) => player.toJSON() as Player);
+        } catch (error) {
+            throw new Error(`Error fetching players by name:${(error as Error).message}`);
+        }
+    };
     static getPlayerByNumber = async (teamId: string, playerNumber: number): Promise<Player[]> => {
         try {
             const players = await PlayerModel.find({ teamId: teamId, number: { $gte: playerNumber } });
             if (players.length === 0) {
-                throw new Error("Players not found");
+                throw new NotFound("Players not found");
             }
             const result = players.map((player) => player.toJSON() as Player);
             return result;
         } catch (error) {
-            throw new Error(`Error fetching player by number: ${(error as Error).message}`);
+            throw new Error(`Error fetching player by number:${(error as Error).message}`);
         }
     };
     static transferPlayer = async (playerId: string, newTeamId: string): Promise<Player> => {
         const session = await PlayerModel.startSession();
         session.startTransaction();
         try {
-            const player = await PlayerModel.findById(playerId);
+            const player = await PlayerModel.findOne({ playerId });
             if (!player) {
-                throw new Error("Player not found");
+                throw new NotFound("Player not found");
             }
             const oldTeam = await TeamModel.findById(player?.teamId);
             if (!oldTeam) {
-                throw new Error("Old team not found");
+                throw new NotFound("Old team not found");
             }
             const newTeam = await TeamModel.findById(newTeamId);
             if (!newTeam) {
-                throw new Error("New team not found");
+                throw new NotFound("New team not found");
             }
             if (newTeam.playerIds.length >= 5) {
-                throw new Error("New team is full");
+                throw new AppError("New team is full", 404);
             }
             if (player.cost > newTeam.budget) {
-                throw new Error("Not enough budget to transfer this player");
+                throw new AppError("Not enough budget to transfer this player", 404);
             }
             player.teamId = newTeamId;
             newTeam.playerIds.push(playerId);
@@ -84,13 +86,13 @@ export class PlayerService {
         const session = await PlayerModel.startSession();
         session.startTransaction();
         try {
-            const player = await PlayerModel.findById(playerId);
+            const player = await PlayerModel.findOne({ playerId });
             if (!player) {
-                throw new Error("Player not found");
+                throw new NotFound("Player not found");
             }
             const team = await TeamModel.findById(player.teamId);
             if (!team) {
-                throw new Error("Team not found");
+                throw new NotFound("Team not found");
             }
             team.playerIds = team.playerIds.filter((id) => id.toString() !== playerId);
             team.budget += player.cost;
