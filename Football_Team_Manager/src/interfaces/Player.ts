@@ -8,3 +8,8 @@ export interface Player {
     cost: number;
     teamId?: string;
 }
+
+export interface SpainPlayer {
+    fullName: string;
+    teamName: string;
+}
