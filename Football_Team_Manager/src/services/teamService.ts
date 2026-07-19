@@ -12,7 +12,7 @@ export class TeamService {
             await newTeam.save();
             return newTeam.toJSON() as Team;
         } catch (error) {
-            throw new Error(`Error creating team: ${(error as Error).message}`);
+            throw new AppError(`Error creating team: ${(error as Error).message}`, 500);
         }
     };
     static addPlayerToTeam = async (teamId: string, playerId: string): Promise<Team | null> => {
@@ -28,13 +28,13 @@ export class TeamService {
                 throw new NotFound("Player not found");
             }
             if (player.teamId) {
-                throw new AppError("Player is already in a team", 404);
+                throw new AppError("Player is already in a team", 409);
             }
             if (team.playerIds.length >= 5) {
-                throw new AppError("Team is full", 404);
+                throw new AppError("Team is full", 400);
             }
             if (player.cost > team.budget) {
-                throw new AppError(" Not enough budget to add this player", 404);
+                throw new AppError(" Not enough budget to add this player", 422);
             }
             team.budget -= player.cost;
             team.playerIds.push(playerId);
@@ -45,7 +45,10 @@ export class TeamService {
             return team.toJSON() as Team;
         } catch (error) {
             await session.abortTransaction();
-            throw new Error(`Error adding player to team: ${(error as Error).message}`);
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Error adding player to team: ${(error as Error).message}`, 500);
         } finally {
             session.endSession();
         }
@@ -80,7 +83,10 @@ export class TeamService {
             ]);
             return teams;
         } catch (error) {
-            throw new Error(`Error fetching top teams with Brazilian players: ${(error as Error).message}`);
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Error fetching top teams with Brazilian players: ${(error as Error).message}`, 500);
         }
     };
     static deleteTeam = async (teamId: string): Promise<void> => {
@@ -96,8 +102,10 @@ export class TeamService {
             await session.commitTransaction();
         } catch (error) {
             await session.abortTransaction();
-            console.error()
-            throw new Error(`Error deleting team: ${(error as Error).message}`);
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Error deleting team: ${(error as Error).message}`, 500);
         } finally {
             session.endSession();
         }
