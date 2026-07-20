@@ -1,9 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
 import { PlayerService } from "../services/playerService.js";
 import type { CreatePlayerDTO } from "../validations/player.validation.js";
-import { platform } from "os";
 
 export class PlayerController {
+
     static createPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerData: CreatePlayerDTO = req.body;
@@ -13,6 +13,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static getPlayerByTeam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const teamId: string = req.params.teamId as string;
@@ -22,6 +23,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static getPlayersByName = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerName: string = req.params.name as string;
@@ -31,6 +33,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static getPlayerByNumber = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const teamId: string = req.params.teamId as string;
@@ -44,6 +47,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static getAllPlayersSpain = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const players = await PlayerService.getAllSpainPlayers();
@@ -52,6 +56,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static getTop3ExpensivePlayers = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const players = await PlayerService.getTop3MostExpensive();
@@ -60,6 +65,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static transferPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerId: string = req.params.playerId as string;
@@ -70,6 +76,7 @@ export class PlayerController {
             next(error);
         }
     };
+    
     static deletePlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerId: string = req.params.playerId as string;
