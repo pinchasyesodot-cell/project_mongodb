@@ -2,6 +2,7 @@ import { Router } from "express";
 import { TeamController } from "../controllers/team.controller.js";
 import { validateRequest } from "../middlewares/validateRequest.js";
 import { createTeamSchema, teamIdParamSchema } from "../validations/team.validation.js";
+import { createGameSchema } from "../validations/game.validation.js";
 
 class TeamRouter {
     public router: Router;
@@ -15,6 +16,12 @@ class TeamRouter {
             "/:teamId/players",
             validateRequest(teamIdParamSchema, "params"),
             TeamController.addPlayerToTeam
+        );
+        this.router.post(
+            "/:teamId/games",
+            validateRequest(teamIdParamSchema, "params"),
+            validateRequest(createGameSchema, "body"),
+            TeamController.addGame
         );
         this.router.get("/top-brazilian-players", TeamController.getTopTeamsWithBrazilianPlayers);
         this.router.delete("/:teamId", validateRequest(teamIdParamSchema, "params"), TeamController.deleteTeam);

@@ -4,6 +4,8 @@ import { TeamModel } from "../models/Team.js";
 import { startSession } from "mongoose";
 import type { CreateTeamDTO } from "../validations/team.validation.js";
 import { AppError, NotFound } from "../utils/AppError.js";
+import type { createGameDTO } from "../validations/game.validation.js";
+import type { Player } from "../interfaces/Player.js";
 
 export class TeamService {
     static createTeam = async (teamData: CreateTeamDTO): Promise<Team> => {
@@ -15,6 +17,7 @@ export class TeamService {
             throw new AppError(`Error creating team: ${(error as Error).message}`, 500);
         }
     };
+
     static addPlayerToTeam = async (teamId: string, playerId: string): Promise<Team | null> => {
         const session = await startSession();
         session.startTransaction();
@@ -49,6 +52,42 @@ export class TeamService {
                 throw error;
             }
             throw new AppError(`Error adding player to team: ${(error as Error).message}`, 500);
+        } finally {
+            session.endSession();
+        }
+    };
+
+    static addGame = async (teamId: string, players: createGameDTO): Promise<Player[]> => {
+        const session = await startSession();
+        session.startTransaction();
+        try {
+            const team = await TeamModel.findById(teamId).session(session);
+            if (!team) {
+                throw new NotFound("Team not found");
+            }
+            const updatePlayer = players.map(async (player) => {
+                const playerData = await PlayerModel.findOne({ playerId: player.playerId }).session(session);
+                if (!playerData) {
+                    throw new NotFound("player not found");
+                }
+                const totalScore = playerData.averageRating * playerData.goalsScored;
+                const newRating = totalScore + player.rating;
+                const newGoalsScored = player.goalsScored + playerData.goalsScored;
+                const newAverageRating = newRating / newGoalsScored;
+                playerData.averageRating = newAverageRating;
+                playerData.goalsScored = newGoalsScored;
+                await playerData.save({ session });
+                return playerData;
+            });
+            const updatedPlayers = (await Promise.all(updatePlayer)) as Player[];
+            await session.commitTransaction();
+            return updatedPlayers;
+        } catch (error) {
+            await session.abortTransaction();
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Error add a new game played by a team: ${(error as Error).message}`, 500);
         } finally {
             session.endSession();
         }
@@ -89,6 +128,7 @@ export class TeamService {
             throw new AppError(`Error fetching top teams with Brazilian players: ${(error as Error).message}`, 500);
         }
     };
+
     static deleteTeam = async (teamId: string): Promise<void> => {
         const session = await startSession();
         session.startTransaction();
