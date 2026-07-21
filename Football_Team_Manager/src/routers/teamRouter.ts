@@ -29,6 +29,7 @@ class TeamRouter {
             validateRequest(teamIdParamSchema, "params"),
             TeamController.getAverageTeamPerformance
         );
+        this.router.get("/countries/representation",TeamController.getCountryRepresentation)
         this.router.delete("/:teamId", validateRequest(teamIdParamSchema, "params"), TeamController.deleteTeam);
     };
 }

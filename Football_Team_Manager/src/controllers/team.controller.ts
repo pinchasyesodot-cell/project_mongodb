@@ -59,6 +59,15 @@ export class TeamController {
         }
     };
 
+    static getCountryRepresentation = async (_req: Request, res: Response, next: NextFunction) => {
+        try {
+            const teams = await TeamService.getCountryRepresentation();
+            res.status(200).json(teams);
+        } catch (error) {
+            next(error);
+        }
+    };
+
     static deleteTeam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const teamId: string = req.params.teamId as string;

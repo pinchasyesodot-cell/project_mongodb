@@ -1,4 +1,4 @@
-import type { AverageTeam, Team } from "../interfaces/Team.js";
+import type { AverageTeam, CountryRepresentation, Team } from "../interfaces/Team.js";
 import { PlayerModel } from "../models/Player.js";
 import { TeamModel } from "../models/Team.js";
 import { startSession, Types } from "mongoose";
@@ -158,6 +158,30 @@ export class TeamService {
             averageGoalsScored: result.averageGoalsScored,
             averageMatchesPlayed: result.averageMatchesPlayed,
         };
+    };
+
+    static getCountryRepresentation = async (): Promise<CountryRepresentation[]> => {
+        try {
+            const representation: CountryRepresentation[] = await TeamModel.aggregate([
+                {
+                    $group: {
+                        _id: "$country",
+                        teamCount: { $sum: 1 },
+                    },
+                },
+                { $sort: { teamCount: -1 } },
+                { $project: { _id: 0, country: "$_id", teamCount: 1 } },
+            ]);
+            if (representation.length === 0) {
+                throw new NotFound("Error get Country Representation: team not found");
+            }
+            return representation;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Error get Country Representation: ${(error as Error).message}`, 500);
+        }
     };
 
     static deleteTeam = async (teamId: string): Promise<void> => {

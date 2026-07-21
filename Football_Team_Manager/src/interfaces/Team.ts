@@ -11,3 +11,8 @@ export interface AverageTeam {
     averageGoalsScored: number;
     averageMatchesPlayed: number;
 }
+
+export interface CountryRepresentation {
+    country: string;
+    teamCount: number;
+}
