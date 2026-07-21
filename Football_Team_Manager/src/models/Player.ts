@@ -11,7 +11,7 @@ const Player = new Schema<Player>(
         cost: { type: Number, required: true },
         teamId: { type: String, index: true },
         goalsScored: { type: Number, default: 0 },
-        matchesPlayed: { type: Number, default: 0 },
+        matchesPlayed: { type: Number, default: 0, index: true },
         averageRating: { type: Number, min: 0, max: 10, default: 0 },
     },
     {
