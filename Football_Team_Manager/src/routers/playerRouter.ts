@@ -3,6 +3,7 @@ import { PlayerController } from "../controllers/player.controller.js";
 import { validateRequest } from "../middlewares/validateRequest.js";
 import {
     createPlayerSchema,
+    natioalityParamsSchema,
     playerIdParamSchema,
     playerNameParamSchema,
     teamAndPlayerNumberSchema,
@@ -34,6 +35,11 @@ class PlayerRouter {
         );
         this.router.get("/spain", PlayerController.getAllPlayersSpain);
         this.router.get("/top-expensive", PlayerController.getTop3ExpensivePlayers);
+        this.router.get(
+            "/top-scorers/:nationality",
+            validateRequest(natioalityParamsSchema, "params"),
+            PlayerController.getTopScorersPlayers
+        );
         this.router.put(
             "/:playerId/transfer",
             validateRequest(playerIdParamSchema, "params"),

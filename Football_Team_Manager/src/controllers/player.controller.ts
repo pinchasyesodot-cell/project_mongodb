@@ -3,7 +3,6 @@ import { PlayerService } from "../services/playerService.js";
 import type { CreatePlayerDTO } from "../validations/player.validation.js";
 
 export class PlayerController {
-
     static createPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerData: CreatePlayerDTO = req.body;
@@ -66,6 +65,16 @@ export class PlayerController {
         }
     };
 
+    static getTopScorersPlayers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const natioality: string = req.params.natioality as string;
+            const topPlayers = PlayerService.getTopScorersByNationality(natioality);
+            res.status(200).json(topPlayers);
+        } catch (error) {
+            next(error);
+        }
+    };
+
     static transferPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerId: string = req.params.playerId as string;
@@ -76,7 +85,7 @@ export class PlayerController {
             next(error);
         }
     };
-    
+
     static deletePlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerId: string = req.params.playerId as string;
