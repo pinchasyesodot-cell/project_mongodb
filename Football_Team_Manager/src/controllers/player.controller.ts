@@ -75,6 +75,17 @@ export class PlayerController {
         }
     };
 
+    static getMostEfficientPlayers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const minMatches = req.query.minMatches ? Number(req.query.minMatches) : 10;
+            const limit = req.query.limit ? Number(req.query.limit) : 5;
+            const players = await PlayerService.getMostEfficientPlayers(minMatches, limit);
+            res.status(200).json(players);
+        } catch (error) {
+            next(error);
+        }
+    };
+
     static transferPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerId: string = req.params.playerId as string;

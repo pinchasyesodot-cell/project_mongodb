@@ -3,6 +3,7 @@ import { PlayerController } from "../controllers/player.controller.js";
 import { validateRequest } from "../middlewares/validateRequest.js";
 import {
     createPlayerSchema,
+    efficientPlayersQuerySchema,
     natioalityParamsSchema,
     playerIdParamSchema,
     playerNameParamSchema,
@@ -35,6 +36,11 @@ class PlayerRouter {
         );
         this.router.get("/spain", PlayerController.getAllPlayersSpain);
         this.router.get("/top-expensive", PlayerController.getTop3ExpensivePlayers);
+        this.router.get(
+            "/efficient-players",
+            validateRequest(efficientPlayersQuerySchema, "query"),
+            PlayerController.getMostEfficientPlayers
+        );
         this.router.get(
             "/top-scorers/:nationality",
             validateRequest(natioalityParamsSchema, "params"),

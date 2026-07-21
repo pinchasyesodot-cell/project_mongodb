@@ -72,4 +72,17 @@ export const natioalityParamsSchema = z.object({
         .trim(),
 });
 
+export const efficientPlayersQuerySchema = z.object({
+    minMatches: z.coerce
+        .number("min Matches number must be a number")
+        .int("min Matches number must be an integer")
+        .min(0, "min Matches must be at least 0")
+        .optional(),
+    limit: z.coerce
+        .number("limit number must be a number")
+        .int("limit number must be an integer")
+        .min(1, "limit must be at least 1")
+        .optional(),
+});
+
 export type CreatePlayerDTO = z.infer<typeof createPlayerSchema>;

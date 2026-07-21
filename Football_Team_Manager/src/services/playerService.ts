@@ -142,6 +142,40 @@ export class PlayerService {
         }
     };
 
+    static getMostEfficientPlayers = async (minMatches: number = 10, limit: number = 5): Promise<Player[]> => {
+        try {
+            const players: Player[] = await PlayerModel.aggregate([
+                { $match: { matchesPlayed: { $gte: minMatches } } },
+                {
+                    $addFields: {
+                        goalsPerMatch: {
+                            $divide: ["$goalsScored", "$matchesPlayed"],
+                        },
+                    },
+                },
+                { $sort: { goalsPerMatch: -1 } },
+                { $limit: limit },
+                {
+                    $project: {
+                        _id: 0,
+                        __v: 0,
+                        createdAt: 0,
+                        updatedAt: 0,
+                    },
+                },
+            ]);
+            if (players.length === 0) {
+                throw new NotFound("Error get Most Efficient Players: players not found");
+            }
+            return players;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Error get Most Efficient Players: ${(error as Error).message}`, 500);
+        }
+    };
+
     static transferPlayer = async (playerId: string, newTeamId: string): Promise<Player> => {
         const session = await PlayerModel.startSession();
         session.startTransaction();
