@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { TeamService } from "../services/teamService.js";
 import type { CreateTeamDTO } from "../validations/team.validation.js";
+import type { createGameDTO } from "../validations/game.validation.js";
 
 export class TeamController {
     static createTeam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -12,6 +13,7 @@ export class TeamController {
             next(error);
         }
     };
+
     static addPlayerToTeam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const teamId: string = req.params.teamId as string;
@@ -22,6 +24,18 @@ export class TeamController {
             next(error);
         }
     };
+
+    static addGame = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const gameData: createGameDTO = req.body;
+            const teamId: string = req.params.teamId as string;
+            const updatedPlayer = await TeamService.addGame(teamId, gameData);
+            res.status(201).json(updatedPlayer);
+        } catch (error) {
+            next(error);
+        }
+    };
+
     static getTopTeamsWithBrazilianPlayers = async (
         _req: Request,
         res: Response,
@@ -34,6 +48,26 @@ export class TeamController {
             next(error);
         }
     };
+
+    static getAverageTeamPerformance = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const teamId: string = req.params.teamId as string;
+            const averageTeamPerformance = await TeamService.getAverageTeamPerformance(teamId);
+            res.status(200).json(averageTeamPerformance);
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    static getCountryRepresentation = async (_req: Request, res: Response, next: NextFunction) => {
+        try {
+            const teams = await TeamService.getCountryRepresentation();
+            res.status(200).json(teams);
+        } catch (error) {
+            next(error);
+        }
+    };
+
     static deleteTeam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const teamId: string = req.params.teamId as string;

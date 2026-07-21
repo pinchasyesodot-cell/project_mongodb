@@ -12,6 +12,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static getPlayerByTeam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const teamId: string = req.params.teamId as string;
@@ -21,6 +22,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static getPlayersByName = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerName: string = req.params.name as string;
@@ -30,6 +32,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static getPlayerByNumber = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const teamId: string = req.params.teamId as string;
@@ -43,6 +46,46 @@ export class PlayerController {
             next(error);
         }
     };
+
+    static getAllPlayersSpain = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const players = await PlayerService.getAllSpainPlayers();
+            res.status(200).json(players);
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    static getTop3ExpensivePlayers = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const players = await PlayerService.getTop3MostExpensive();
+            res.status(200).json(players);
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    static getTopScorersPlayers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const natioality: string = req.params.natioality as string;
+            const topPlayers = PlayerService.getTopScorersByNationality(natioality);
+            res.status(200).json(topPlayers);
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    static getMostEfficientPlayers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const minMatches = req.query.minMatches ? Number(req.query.minMatches) : 10;
+            const limit = req.query.limit ? Number(req.query.limit) : 5;
+            const players = await PlayerService.getMostEfficientPlayers(minMatches, limit);
+            res.status(200).json(players);
+        } catch (error) {
+            next(error);
+        }
+    };
+
     static transferPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerId: string = req.params.playerId as string;
@@ -53,6 +96,7 @@ export class PlayerController {
             next(error);
         }
     };
+
     static deletePlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const playerId: string = req.params.playerId as string;
