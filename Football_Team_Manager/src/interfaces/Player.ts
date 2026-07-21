@@ -16,3 +16,10 @@ export interface SpainPlayer {
     fullName: string;
     teamName: string;
 }
+
+export interface TopPlayer {
+    playerId: string;
+    firstName: string;
+    lastName: string;
+    goalsScored: number;
+}

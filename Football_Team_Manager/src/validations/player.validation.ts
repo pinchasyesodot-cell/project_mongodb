@@ -64,4 +64,12 @@ export const playerNameParamSchema = z.object({
         .trim(),
 });
 
+export const natioalityParamsSchema = z.object({
+    nationality: z
+        .string("Nationality must be a string")
+        .min(2, "Nationality must be at least 2 characters long")
+        .max(20, "Nationality must be at most 20 characters long")
+        .trim(),
+});
+
 export type CreatePlayerDTO = z.infer<typeof createPlayerSchema>;
