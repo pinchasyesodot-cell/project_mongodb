@@ -24,6 +24,11 @@ class TeamRouter {
             TeamController.addGame
         );
         this.router.get("/top-brazilian-players", TeamController.getTopTeamsWithBrazilianPlayers);
+        this.router.get(
+            "/performance/:teamId",
+            validateRequest(teamIdParamSchema, "params"),
+            TeamController.getAverageTeamPerformance
+        );
         this.router.delete("/:teamId", validateRequest(teamIdParamSchema, "params"), TeamController.deleteTeam);
     };
 }

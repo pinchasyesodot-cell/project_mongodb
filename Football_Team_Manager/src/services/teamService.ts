@@ -1,7 +1,7 @@
-import type { Team } from "../interfaces/Team.js";
+import type { AverageTeam, Team } from "../interfaces/Team.js";
 import { PlayerModel } from "../models/Player.js";
 import { TeamModel } from "../models/Team.js";
-import { startSession } from "mongoose";
+import { startSession, Types } from "mongoose";
 import type { CreateTeamDTO } from "../validations/team.validation.js";
 import { AppError, NotFound } from "../utils/AppError.js";
 import type { createGameDTO } from "../validations/game.validation.js";
@@ -127,6 +127,37 @@ export class TeamService {
             }
             throw new AppError(`Error fetching top teams with Brazilian players: ${(error as Error).message}`, 500);
         }
+    };
+
+    static getAverageTeamPerformance = async (teamId: string): Promise<AverageTeam> => {
+        const stats: AverageTeam[] = await TeamModel.aggregate([
+            { $match: { _id: new Types.ObjectId(teamId) } },
+            {
+                $lookup: {
+                    from: "players",
+                    localField: "_id",
+                    foreignField: "teamId",
+                    as: "teamPlayers",
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    teamName: "$name",
+                    averageGoalsScored: { $avg: "$teamPlayers.goalsScored" },
+                    averageMatchesPlayed: { $avg: "$teamPlayers.matchesPlayed" },
+                },
+            },
+        ]);
+        const [result] = stats;
+        if (!result) {
+            throw new NotFound("Error Average Team Per formance: Team not found");
+        }
+        return {
+            teamName: result.teamName,
+            averageGoalsScored: result.averageGoalsScored,
+            averageMatchesPlayed: result.averageMatchesPlayed,
+        };
     };
 
     static deleteTeam = async (teamId: string): Promise<void> => {

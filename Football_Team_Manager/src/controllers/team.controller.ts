@@ -49,6 +49,16 @@ export class TeamController {
         }
     };
 
+    static getAverageTeamPerformance = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const teamId: string = req.params.teamId as string;
+            const averageTeamPerformance = await TeamService.getAverageTeamPerformance(teamId);
+            res.status(200).json(averageTeamPerformance);
+        } catch (error) {
+            next(error);
+        }
+    };
+
     static deleteTeam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const teamId: string = req.params.teamId as string;

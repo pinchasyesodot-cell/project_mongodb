@@ -5,3 +5,9 @@ export interface Team {
     playerIds: string[];
     country: string;
 }
+
+export interface AverageTeam {
+    teamName: string;
+    averageGoalsScored: number;
+    averageMatchesPlayed: number;
+}
