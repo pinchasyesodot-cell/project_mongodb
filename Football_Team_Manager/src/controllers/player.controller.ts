@@ -1,109 +1,71 @@
 import type { NextFunction, Request, Response } from "express";
 import { PlayerService } from "../services/playerService.js";
 import type { CreatePlayerDTO } from "../validations/player.validation.js";
+import { wrapAsync } from "../utils/wrapAsync.js";
+import { AppError } from "../utils/AppError.js";
 
 export class PlayerController {
-    static createPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const playerData: CreatePlayerDTO = req.body;
-            const newPlayer = await PlayerService.createPlayer(playerData);
-            res.status(201).json(newPlayer);
-        } catch (error) {
-            next(error);
-        }
-    };
+    static createPlayer = wrapAsync(async (req: Request, res: Response): Promise<void> => {
+        const playerData: CreatePlayerDTO = req.body;
+        const newPlayer = await PlayerService.createPlayer(playerData);
+        res.status(201).json(newPlayer);
+    });
 
-    static getPlayerByTeam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const teamId: string = req.params.teamId as string;
-            const players = await PlayerService.getPlayerByTeam(teamId);
-            res.status(200).json(players);
-        } catch (error) {
-            next(error);
-        }
-    };
+    static getPlayerByTeam = wrapAsync(async (req: Request, res: Response): Promise<void> => {
+        const teamId: string = req.params.teamId as string;
+        const players = await PlayerService.getPlayerByTeam(teamId);
+        res.status(200).json(players);
+    });
 
-    static getPlayersByName = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const playerName: string = req.params.name as string;
-            const players = await PlayerService.getPlayersByName(playerName);
-            res.status(200).json(players);
-        } catch (error) {
-            next(error);
-        }
-    };
+    static getPlayersByName = wrapAsync(async (req: Request, res: Response): Promise<void> => {
+        const playerName: string = req.params.name as string;
+        const players = await PlayerService.getPlayersByName(playerName);
+        res.status(200).json(players);
+    });
 
-    static getPlayerByNumber = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const teamId: string = req.params.teamId as string;
-            const playerNumber: number = Number(req.params.playerNumber as string);
-            if (isNaN(playerNumber)) {
-                throw new Error("Invalid player number");
-            }
-            const players = await PlayerService.getPlayerByNumber(teamId, playerNumber);
-            res.status(200).json(players);
-        } catch (error) {
-            next(error);
+    static getPlayerByNumber = wrapAsync(async (req: Request, res: Response): Promise<void> => {
+        const teamId: string = req.params.teamId as string;
+        const playerNumber: number = Number(req.params.playerNumber as string);
+        if (isNaN(playerNumber)) {
+            throw new AppError("Invalid player number", 400);
         }
-    };
+        const players = await PlayerService.getPlayerByNumber(teamId, playerNumber);
+        res.status(200).json(players);
+    });
 
-    static getAllPlayersSpain = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const players = await PlayerService.getAllSpainPlayers();
-            res.status(200).json(players);
-        } catch (error) {
-            next(error);
-        }
-    };
+    static getAllPlayersSpain = wrapAsync(async (_req: Request, res: Response): Promise<void> => {
+        const players = await PlayerService.getAllSpainPlayers();
+        res.status(200).json(players);
+    });
 
-    static getTop3ExpensivePlayers = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const players = await PlayerService.getTop3MostExpensive();
-            res.status(200).json(players);
-        } catch (error) {
-            next(error);
-        }
-    };
+    static getTop3ExpensivePlayers = wrapAsync(async (_req: Request, res: Response): Promise<void> => {
+        const players = await PlayerService.getTop3MostExpensive();
+        res.status(200).json(players);
+    });
 
-    static getTopScorersPlayers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const natioality: string = req.params.natioality as string;
-            const topPlayers = PlayerService.getTopScorersByNationality(natioality);
-            res.status(200).json(topPlayers);
-        } catch (error) {
-            next(error);
-        }
-    };
+    static getTopScorersPlayers = wrapAsync(async (req: Request, res: Response): Promise<void> => {
+        const nationality: string = req.params.nationality as string;
+        const topPlayers = await PlayerService.getTopScorersByNationality(nationality);
+        res.status(200).json(topPlayers);
+    });
 
-    static getMostEfficientPlayers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const minMatches = req.query.minMatches ? Number(req.query.minMatches) : 10;
-            const limit = req.query.limit ? Number(req.query.limit) : 5;
-            const players = await PlayerService.getMostEfficientPlayers(minMatches, limit);
-            res.status(200).json(players);
-        } catch (error) {
-            next(error);
-        }
-    };
+    static getMostEfficientPlayers = wrapAsync(async (req: Request, res: Response): Promise<void> => {
+        const minMatches = req.query.minMatches ? Number(req.query.minMatches) : 10;
+        const limit = req.query.limit ? Number(req.query.limit) : 5;
+        const players = await PlayerService.getMostEfficientPlayers(minMatches, limit);
+        res.status(200).json(players);
+    });
 
-    static transferPlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const playerId: string = req.params.playerId as string;
-            const newTeamId: string = req.body.newTeamId;
-            const updatedPlayer = await PlayerService.transferPlayer(playerId, newTeamId);
-            res.status(200).json(updatedPlayer);
-        } catch (error) {
-            next(error);
-        }
-    };
+    static transferPlayer = wrapAsync(async (req: Request, res: Response): Promise<void> => {
+        const playerId: string = req.params.playerId as string;
+        const newTeamId: string = req.body.newTeamId;
+        const updatedPlayer = await PlayerService.transferPlayer(playerId, newTeamId);
+        res.status(200).json(updatedPlayer);
+    });
 
-    static deletePlayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const playerId: string = req.params.playerId as string;
-            await PlayerService.deletePlayer(playerId);
-            res.status(200).json({ message: "Player deleted successfully" });
-        } catch (error) {
-            next(error);
-        }
-    };
+    static deletePlayer = wrapAsync(async (req: Request, res: Response): Promise<void> => {
+        const playerId: string = req.params.playerId as string;
+        await PlayerService.deletePlayer(playerId);
+        res.sendStatus(204);
+    });
 }

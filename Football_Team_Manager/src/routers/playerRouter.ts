@@ -4,7 +4,7 @@ import { validateRequest } from "../middlewares/validateRequest.js";
 import {
     createPlayerSchema,
     efficientPlayersQuerySchema,
-    natioalityParamsSchema,
+    nationalityParamsSchema,
     playerIdParamSchema,
     playerNameParamSchema,
     teamAndPlayerNumberSchema,
@@ -43,7 +43,7 @@ class PlayerRouter {
         );
         this.router.get(
             "/top-scorers/:nationality",
-            validateRequest(natioalityParamsSchema, "params"),
+            validateRequest(nationalityParamsSchema, "params"),
             PlayerController.getTopScorersPlayers
         );
         this.router.put(
