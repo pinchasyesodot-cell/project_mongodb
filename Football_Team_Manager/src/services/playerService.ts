@@ -1,249 +1,192 @@
+import type { ClientSession } from "mongoose";
 import type { Player, SpainPlayer, TopPlayer } from "../interfaces/Player.js";
+import type { Team } from "../interfaces/Team.js";
 import { PlayerModel } from "../models/Player.js";
 import { TeamModel } from "../models/Team.js";
+import { PlayerRepository } from "../repository/playerRepository.js";
+import { TeamRepository } from "../repository/teamRepository.js";
 import { AppError, NotFound } from "../utils/AppError.js";
+import { withTransaction } from "../utils/transaction.js";
 import type { CreatePlayerDTO } from "../validations/player.validation.js";
 
 export class PlayerService {
     static createPlayer = async (playerData: CreatePlayerDTO): Promise<Player> => {
-        try {
-            const newPlayer = new PlayerModel(playerData);
-            await newPlayer.save();
-            return newPlayer.toJSON() as Player;
-        } catch (error) {
-            throw new AppError(`Error creating player: ${(error as Error).message}`, 500);
-        }
+        return withTransaction(async (session) => {
+            if (playerData.teamId) {
+                const updateTeam = await TeamRepository.updateTeamAfterAddingPlayer(
+                    playerData.teamId,
+                    playerData.playerId,
+                    playerData.cost,
+                    session
+                );
+                if (!updateTeam) {
+                    const team = await TeamRepository.findTeamById(playerData.teamId, session);
+                    if (!team) {
+                        throw new NotFound("create player: Team not found");
+                    }
+                    if (team.playerIds.length >= 5) {
+                        throw new AppError("Team is full", 400);
+                    }
+                    if (playerData.cost > team.budget) {
+                        throw new AppError("Not enough budget to add this player", 422);
+                    }
+                    throw new AppError("Failed to update team, please try again", 500);
+                }
+            }
+            const newPlayer = await PlayerRepository.savePlayer(playerData, session);
+            return newPlayer;
+        });
     };
 
     static getPlayerByTeam = async (teamId: string): Promise<Player[]> => {
-        try {
-            const players = await PlayerModel.find({ teamId });
-            if (players.length === 0) {
-                throw new NotFound("Error fetching players by team: No players found");
-            }
-            return players.map((player) => player.toJSON() as Player);
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error fetching players by team: ${(error as Error).message}`, 500);
+        const players = await PlayerRepository.getPlayersByTeam(teamId);
+        if (players.length === 0) {
+            throw new NotFound("Error fetching players by team: No players found");
         }
+        return players;
     };
 
     static getPlayersByName = async (playerName: string): Promise<Player[]> => {
-        try {
-            const regex = new RegExp(playerName, "i");
-            const players = await PlayerModel.find({ $or: [{ firstName: regex }, { lastName: regex }] });
-            if (players.length === 0) {
-                throw new NotFound("Error fetching players by name: Can't find a player");
-            }
-            return players.map((player) => player.toJSON() as Player);
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error fetching players by name: ${(error as Error).message}`, 500);
+        const regex = new RegExp(playerName, "i");
+        const players = await PlayerRepository.getPlayerByName(regex);
+        if (players.length === 0) {
+            throw new NotFound("Error fetching players by name: Can't find a player");
         }
+        return players;
     };
 
     static getPlayerByNumber = async (teamId: string, playerNumber: number): Promise<Player[]> => {
-        try {
-            const players = await PlayerModel.find({ teamId: teamId, number: { $gte: playerNumber } });
-            if (players.length === 0) {
-                throw new NotFound("Error fetching player by number: Players not found");
-            }
-            const result = players.map((player) => player.toJSON() as Player);
-            return result;
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error fetching player by number: ${(error as Error).message}`, 500);
+        const players = await PlayerRepository.getPlayerByNumber(teamId, playerNumber);
+        if (players.length === 0) {
+            throw new NotFound("Error fetching player by number: Players not found");
         }
+        return players;
     };
 
     static getAllSpainPlayers = async (): Promise<SpainPlayer[]> => {
-        try {
-            const players: SpainPlayer[] = await PlayerModel.aggregate([
-                { $match: { nationality: "Spain" } },
-                {
-                    $lookup: {
-                        from: "teams",
-                        localField: "teamId",
-                        foreignField: "_id",
-                        as: "teamData",
-                    },
-                },
-                { $unwind: "$teamData" },
-                {
-                    $project: {
-                        _id: 0,
-                        fullName: { $concat: ["$firstName", " ", "$lastName"] },
-                        teamName: "$teamData.name",
-                    },
-                },
-            ]);
-            if (players.length === 0) {
-                throw new NotFound("players Spain not found");
-            }
-            return players;
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error get players Spain: ${(error as Error).message}`, 500);
+        const players = await PlayerRepository.getAllSpainPlayers();
+        if (players.length === 0) {
+            throw new NotFound("players Spain not found");
         }
+        return players;
     };
 
     static getTop3MostExpensive = async (): Promise<Player[]> => {
-        try {
-            const players: Player[] = await PlayerModel.aggregate([
-                { $match: { nationality: { $ne: "Spain" } } },
-                { $sort: { cost: -1 } },
-                { $limit: 3 },
-            ]);
-            if (players.length === 0) {
-                throw new NotFound("3 players not found");
-            }
-            return players;
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error get top 3 expensive players: ${(error as Error).message}`, 500);
+        const players = await PlayerRepository.getTop3MostExpensive();
+        if (players.length === 0) {
+            throw new NotFound("3 players not found");
         }
+        return players;
     };
 
     static getTopScorersByNationality = async (nationality: string): Promise<TopPlayer[]> => {
-        try {
-            const topPlayers: TopPlayer[] = await PlayerModel.aggregate([
-                { $match: { nationality } },
-                { $sort: { goalsScored: -1 } },
-                { $limit: 3 },
-                {
-                    $project: {
-                        _id: 0,
-                        playerId: 1,
-                        firstName: 1,
-                        lastName: 1,
-                        goalsScored: 1,
-                    },
-                },
-            ]);
-            if (topPlayers.length === 0) {
-                throw new NotFound("Error get 3 top players: not found players");
-            }
-            return topPlayers;
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error get 3 top players: ${(error as Error).message}`, 500);
+        const topPlayers = await PlayerRepository.getTopScorersByNationality(nationality);
+        if (topPlayers.length === 0) {
+            throw new NotFound("Error get 3 top players: not found players");
         }
+        return topPlayers;
     };
 
     static getMostEfficientPlayers = async (minMatches: number = 10, limit: number = 5): Promise<Player[]> => {
-        try {
-            const players: Player[] = await PlayerModel.aggregate([
-                { $match: { matchesPlayed: { $gte: minMatches } } },
-                {
-                    $addFields: {
-                        goalsPerMatch: {
-                            $divide: ["$goalsScored", "$matchesPlayed"],
-                        },
-                    },
-                },
-                { $sort: { goalsPerMatch: -1 } },
-                { $limit: limit },
-                {
-                    $project: {
-                        _id: 0,
-                        __v: 0,
-                        createdAt: 0,
-                        updatedAt: 0,
-                    },
-                },
-            ]);
-            if (players.length === 0) {
-                throw new NotFound("Error get Most Efficient Players: players not found");
-            }
-            return players;
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error get Most Efficient Players: ${(error as Error).message}`, 500);
+        const players = await PlayerRepository.getMostEfficientPlayers(minMatches, limit);
+        if (players.length === 0) {
+            throw new NotFound("Error get Most Efficient Players: players not found");
         }
+        return players;
     };
 
     static transferPlayer = async (playerId: string, newTeamId: string): Promise<Player> => {
-        const session = await PlayerModel.startSession();
-        session.startTransaction();
-        try {
-            const player = await PlayerModel.findOne({ playerId });
-            if (!player) {
-                throw new NotFound("Error transferring player: Player not found");
+        return withTransaction(async (session) => {
+            const { player } = await PlayerService.unlinkPlayerFromTeam(playerId, session);
+            if (player.teamId!.toString() === newTeamId) {
+                throw new AppError("Error transferring player: Player is already in the new team", 422);
             }
-            const oldTeam = await TeamModel.findById(player?.teamId);
-            if (!oldTeam) {
-                throw new NotFound("Error transferring player: Old team not found");
+            const addPlayerToTeam = await PlayerService.linkPlayerToTeam(playerId, newTeamId, session);
+            return addPlayerToTeam.player;
+        });
+    };
+
+    static linkPlayerToTeam = async (
+        playerId: string,
+        teamId: string,
+        session: ClientSession
+    ): Promise<{
+        player: Player;
+        team: Team;
+    }> => {
+        const player = await PlayerRepository.updatePlayerTeamId(playerId, teamId, session);
+        if (!player) {
+            const foundPlayer = await PlayerRepository.findPlayerById(playerId, session);
+            if (!foundPlayer) {
+                throw new NotFound("player not found");
             }
-            const newTeam = await TeamModel.findById(newTeamId);
-            if (!newTeam) {
-                throw new NotFound("Error transferring player: New team not found");
+            if (foundPlayer.teamId) {
+                throw new AppError("Player already belongs to another team", 422);
             }
-            if (newTeam.playerIds.length >= 5) {
-                throw new AppError("Error transferring player: New team is full", 422);
-            }
-            if (player.cost > newTeam.budget) {
-                throw new AppError("Error transferring player: Not enough budget to transfer this player", 422);
-            }
-            player.teamId = newTeamId;
-            newTeam.playerIds.push(playerId);
-            newTeam.budget -= player.cost;
-            oldTeam.playerIds = oldTeam.playerIds.filter((id) => id.toString() !== playerId);
-            oldTeam.budget += player.cost;
-            await oldTeam.save({ session });
-            await newTeam.save({ session });
-            await player.save({ session });
-            await session.commitTransaction();
-            return player.toJSON() as Player;
-        } catch (error) {
-            await session.abortTransaction();
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error transferring player: ${(error as Error).message}`, 500);
-        } finally {
-            session.endSession();
+            throw new AppError("Failed to update player, please try again", 500);
         }
+        const team = await TeamRepository.updateTeamAfterAddingPlayer(teamId, playerId, player.cost, session);
+        if (!team) {
+            const foundTeam = await TeamRepository.findTeamById(teamId, session);
+            if (!foundTeam) {
+                throw new NotFound("team not found");
+            }
+            if (player.cost > foundTeam.budget) {
+                throw new AppError("Not enough budget to add this player", 422);
+            }
+            if (foundTeam.playerIds.length >= 5) {
+                throw new AppError("Team is full", 400);
+            }
+            throw new AppError("Failed to update team, please try again", 500);
+        }
+        return { player, team };
+    };
+
+    static unlinkPlayerFromTeam = async (
+        playerId: string,
+        session: ClientSession
+    ): Promise<{
+        player: Player;
+        team: Team;
+    }> => {
+        const player = await PlayerRepository.updatePlayerAfterRemoveTeam(playerId, session);
+        if (!player) {
+            const foundPlayer = await PlayerRepository.findPlayerById(playerId, session);
+            if (!foundPlayer) {
+                throw new NotFound("player not found");
+            }
+            throw new AppError("Failed to update player, please try again", 500);
+        }
+        const team = await TeamRepository.updateTeamAfterRemovePlayer(
+            player.teamId!.toString(),
+            playerId,
+            player.cost,
+            session
+        );
+        if (!team) {
+            throw new NotFound("team not found");
+        }
+        return { player, team };
     };
 
     static deletePlayer = async (playerId: string): Promise<void> => {
-        const session = await PlayerModel.startSession();
-        session.startTransaction();
-        try {
-            const player = await PlayerModel.findOne({ playerId });
+        return withTransaction(async (session) => {
+            const player = await PlayerRepository.findPlayerById(playerId, session);
             if (!player) {
                 throw new NotFound("Error deleting player: Player not found");
             }
-            const team = await TeamModel.findById(player.teamId);
-            if (!team) {
-                throw new NotFound("Error deleting player: Team not found");
+            if (player.teamId) {
+                const team = await TeamRepository.updateTeamAfterRemovePlayer(
+                    player.teamId.toString(),
+                    playerId,
+                    player.cost,
+                    session
+                );
+                if (!team) {
+                    throw new NotFound("Error deleting player: Team not found");
+                }
             }
-            team.playerIds = team.playerIds.filter((id) => id.toString() !== playerId);
-            team.budget += player.cost;
-            await team.save({ session });
-            await PlayerModel.deleteOne({ playerId: playerId }, { session });
-            await session.commitTransaction();
-        } catch (error) {
-            await session.abortTransaction();
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Error deleting player: ${(error as Error).message}`, 500);
-        } finally {
-            session.endSession();
-        }
+            await PlayerRepository.deletePlayer(playerId, session);
+        });
     };
 }
