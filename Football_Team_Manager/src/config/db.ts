@@ -1,5 +1,6 @@
 import { connect } from "mongoose";
 import { MONGO_URI } from "./env.js";
+import logger from "../utils/logger.js";
 
 class Database {
     public connect = async (): Promise<void> => {
@@ -8,9 +9,10 @@ class Database {
                 serverSelectionTimeoutMS: 5000,
                 socketTimeoutMS: 45000,
             });
-            console.log("Connected to MongoDB successfully");
+            logger.info("Connected to MongoDB successfully");
         } catch (error) {
-            throw new Error("Failed to connect to MongoDB:", { cause: error });
+            logger.error("Failed to connect to MongoDB:", { cause: error });
+            throw new Error("Failed to connect to MongoDB:");
         }
     }
 }
