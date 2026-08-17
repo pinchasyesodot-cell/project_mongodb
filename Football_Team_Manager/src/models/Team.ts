@@ -6,7 +6,7 @@ const Team = new Schema<Team>(
         name: { type: String, required: true, unique: true },
         budget: { type: Number, required: true },
         playerIds: { type: [String], required: true },
-        country: { type: String, required: true },
+        country: { type: String, required: true, index: true },
     },
     {
         timestamps: true,
